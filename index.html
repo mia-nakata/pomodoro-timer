@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積もりジェネレーター</title>
+    <meta name="description" content="">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/script.js" defer></script>
+</head>
+<body>
+    
+</body>
+</html><div class="smile-simulator-container">
+  <div class="simulator-header">
+    <h3>かんたん概算見積もりシミュレーター</h3>
+    <p>ご希望のプランとオプションをお選びいただくと、目安の金額がわかります。</p>
+  </div>
+
+  <div class="simulator-body">
+    <div class="sim-group">
+      <h4>1. 基本プランをお選びください</h4>
+      <select id="sim-base-plan" class="sim-control">
+        <option value="0">プランを選択してください</option>
+        <optgroup label="料金パック（物量に合わせて）">
+          <option value="2000">単品回収（2,000円〜）</option>
+          <option value="8000">軽バン 少量パック（8,000円〜）</option>
+          <option value="18000">軽バン 1台パック（18,000円〜）</option>
+          <option value="50000">2tパック（50,000円〜）</option>
+          <option value="75000">2tワイド（75,000円〜）</option>
+        </optgroup>
+        <optgroup label="お部屋丸ごとプラン">
+          <option value="40000">1DKパック（40,000円〜）</option>
+          <option value="70000">1LDKパック（70,000円〜）</option>
+          <option value="110000">2DKパック（110,000円〜）</option>
+          <option value="130000">2LDKパック（130,000円〜）</option>
+          <option value="150000">3DKパック（150,000円〜）</option>
+          <option value="180000">3LDKパック（180,000円〜）</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="sim-group">
+      <h4>2. ついでに頼めるオプション（複数選択可）</h4>
+      <p class="sim-note">※オプション料金は目安です。詳細はお見積り時にご案内します。</p>
+      <ul class="sim-options">
+        <li>
+          <label>
+            <input type="checkbox" class="sim-option-check" value="10000">
+            外壁・玄関の高圧洗浄（目安: +10,000円）
+          </label>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" class="sim-option-check" value="5000">
+            お庭の草むしり（目安: +5,000円）
+          </label>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" class="sim-option-check" value="5000">
+            床拭き・窓拭き清掃（目安: +5,000円）
+          </label>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" class="sim-option-check" value="3000">
+            家具の移動などのちょっとした作業（目安: +3,000円）
+          </label>
+        </li>
+      </ul>
+    </div>
+
+    <div class="sim-result">
+      <p>概算お見積り金額</p>
+      <div class="sim-price-display">
+        <span class="sim-currency">¥</span>
+        <span id="sim-total-price">0</span>
+        <span class="sim-tax">〜（税込）</span>
+      </div>
+      <p class="sim-result-note">※実際の金額は物量や環境により変動いたします。<br>正確な金額は無料のLINE見積もりをご利用ください。</p>
+    </div>
+  </div>
+</div>

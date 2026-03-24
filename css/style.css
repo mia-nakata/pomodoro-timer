@@ -1,0 +1,131 @@
+/* シミュレーター全体の枠組み */
+.smile-simulator-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background-color: #ffffff;
+  border: 2px solid #e0e5ec;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  font-family: inherit; /* サイトのフォントを引き継ぐ */
+}
+
+/* ヘッダー部分 */
+.simulator-header {
+  background-color: #f7f9fc;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #e0e5ec;
+}
+
+.simulator-header h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.simulator-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* ボディ部分 */
+.simulator-body {
+  padding: 25px;
+}
+
+.sim-group {
+  margin-bottom: 25px;
+}
+
+.sim-group h4 {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 10px 0;
+  padding-left: 10px;
+  border-left: 4px solid #3b82f6; /* サイトの雰囲気に合わせたブルー */
+}
+
+.sim-note {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+/* プルダウン */
+.sim-control {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+/* オプション（チェックボックス） */
+.sim-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sim-options li {
+  margin-bottom: 8px;
+}
+
+.sim-options label {
+  display: block;
+  padding: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.95rem;
+}
+
+.sim-options label:hover {
+  background-color: #f3f4f6;
+}
+
+.sim-option-check {
+  transform: scale(1.2);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* 結果表示エリア */
+.sim-result {
+  background-color: #3b82f6; /* アクセントカラーのブルー */
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 30px;
+}
+
+.sim-result p {
+  margin: 0 0 5px 0;
+  font-size: 0.9rem;
+}
+
+.sim-price-display {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #ffde59; /* 目立つイエロー系 */
+  margin-bottom: 10px;
+}
+
+.sim-currency, .sim-tax {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #fff;
+}
+
+.sim-result-note {
+  font-size: 0.75rem !important;
+  opacity: 0.9;
+  line-height: 1.4;
+}
