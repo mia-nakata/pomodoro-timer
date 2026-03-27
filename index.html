@@ -119,7 +119,9 @@
       }
       
       .btn.bgm-on {
+        opacity: 1;
         background-color: var(--btn-hover);
+        border-color: var(--text-color);
         border-style: solid;
       }
 
@@ -325,23 +327,41 @@
       }
 
       /* =========================================
-       5. 追加機能: 音声制御とlocalStorage管理
+       5. 修正版: 音声制御とlocalStorage管理
        ========================================= */
       let audioCtx;
+
+      // 修正: より「心地よい」と感じるクリスタル・チャイム音
       function playChime() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.1);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0);
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 3.5); 
+
+        const now = audioCtx.currentTime;
+
+        // 音色を作成するヘルパー関数
+        const playBell = (freq, volume, duration) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.type = 'sine'; // 柔らかなサイン波
+          osc.frequency.setValueAtTime(freq, now);
+          
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(volume, now + 0.02); // 優しい立ち上がり
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration); // 長い残響
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start(now);
+          osc.stop(now + duration);
+        };
+
+        // 複数の音を重ねて和音（C Major chord + high sparkle）を作る
+        playBell(523.25, 0.15, 2.5); // C5 (ド)
+        playBell(659.25, 0.10, 2.0); // E5 (ミ)
+        playBell(783.99, 0.08, 1.8); // G5 (ソ)
+        playBell(1046.50, 0.05, 1.5); // C6 (高いド - きらめき成分)
       }
 
       const countDisplay = document.getElementById("count-display");
@@ -426,7 +446,7 @@
           playChime();
 
           if (currentMode === "work") {
-            incrementCount(); // 追加: 集中完了時にカウントアップ
+            incrementCount(); 
           }
 
           if (currentMode === "rest") {
@@ -438,7 +458,6 @@
         }
       }
 
-      // AudioContext再開のための関数
       function resumeAudio() {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       }
