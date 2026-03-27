@@ -3,11 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Relaxing Pomodoro Timer - Slow & Colorful Firework</title>
+    <title>Relaxing Pomodoro Timer - Responsive & Perfect UI</title>
     <style>
       /* --- 1. 配色の変数（グラデーション背景） --- */
       :root {
-        /* ライトモード（爽やかな晴天） */
         --bg-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
         --text-color: #2c3e50;
         --btn-border: #7f8c8d;
@@ -15,7 +14,6 @@
       }
 
       body.dark-mode {
-        /* ダークモード（深みのある星空） */
         --bg-gradient: linear-gradient(135deg, #090a0f 0%, #1b2735 100%);
         --text-color: #ececec;
         --btn-border: #888888;
@@ -61,22 +59,50 @@
         position: relative;
         z-index: 10;
         text-align: center;
+        width: 100%;
+        padding: 0 20px;
+        box-sizing: border-box;
       }
 
       #time-display {
-        font-size: 8rem;
+        font-size: clamp(5rem, 15vw, 9rem);
         font-weight: normal;
-        margin: 0 0 40px 0;
+        margin: 0 0 10px 0; /* カウンターを入れるため余白を調整 */
         letter-spacing: 15px;
         text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        text-indent: 15px; 
       }
 
-      /* --- 4. ゴーストボタン --- */
-      .controls {
+      /* --- 新規追加: セッションカウンターのスタイル --- */
+      #session-counter {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        opacity: 0.8;
+      }
+      #session-counter span {
+        font-weight: bold;
+        font-size: 1.4rem;
+      }
+
+      /* --- 4. ボタンのレイアウト（レスポンシブ対応） --- */
+      .controls-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .controls-group {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
         gap: 15px;
+      }
+
+      .controls-group.settings {
+        gap: 10px;
+        margin-top: 10px;
       }
 
       .btn {
@@ -88,9 +114,10 @@
         letter-spacing: 2px;
         border-radius: 50px;
         cursor: pointer;
-        transition: all 0.5s ease;
+        transition: all 0.4s ease;
         font-family: inherit;
         outline: none;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .btn:hover {
@@ -99,11 +126,47 @@
       }
 
       .btn.sub-action {
-        opacity: 0.5;
+        opacity: 0.6;
         border-style: dashed;
+        padding: 8px 20px;
+        font-size: 0.85rem;
       }
       .btn.sub-action:hover {
         opacity: 1;
+      }
+      
+      .btn.bgm-on {
+        opacity: 1;
+        background-color: var(--btn-hover);
+        border-color: var(--text-color);
+        border-style: solid;
+      }
+
+      @media (max-width: 600px) {
+        #time-display {
+          margin: 0 0 5px 0;
+        }
+        #session-counter {
+          font-size: 1rem;
+          margin-bottom: 20px;
+        }
+        #session-counter span {
+          font-size: 1.2rem;
+        }
+        .controls-wrapper {
+          gap: 15px;
+        }
+        .controls-group {
+          gap: 10px;
+        }
+        .btn {
+          padding: 10px 22px;
+          font-size: 0.85rem;
+        }
+        .btn.sub-action {
+          padding: 6px 16px;
+          font-size: 0.75rem;
+        }
       }
     </style>
   </head>
@@ -112,53 +175,156 @@
 
     <div class="timer-container">
       <h1 id="time-display">25:00</h1>
-      <div class="controls">
-        <button id="start-btn" class="btn">スタート</button>
-        <button id="pause-btn" class="btn">一時停止</button>
-        <button id="reset-btn" class="btn">リセット</button>
-        <button id="test-btn" class="btn sub-action">3秒テスト</button>
-        <button id="theme-btn" class="btn sub-action">テーマ切替</button>
+      <div id="session-counter">今日の集中回数: <span id="count-display">0</span> 回</div>
+      
+      <div class="controls-wrapper">
+        <div class="controls-group">
+          <button id="work-btn" class="btn">25分集中</button>
+          <button id="rest-btn" class="btn">5分休憩</button>
+        </div>
+        
+        <div class="controls-group">
+          <button id="start-btn" class="btn">スタート</button>
+          <button id="pause-btn" class="btn">一時停止</button>
+        </div>
+        
+        <div class="controls-group settings">
+          <button id="bgm-btn" class="btn sub-action">BGM 再生</button>
+          <button id="theme-btn" class="btn sub-action">テーマ切替</button>
+          <button id="test-btn" class="btn sub-action">3秒テスト</button>
+        </div>
       </div>
     </div>
 
     <script>
       /* =========================================
-       0. カラー設定と高速化キャッシュの作成
+       0. オフスクリーンキャンバスによる高速化処理
        ========================================= */
+      const explosionCaches = {};
       const goldColor = "rgba(212, 196, 168, 1)";
       const petalColors = [
-        "rgba(255, 182, 193, 0.8)", // ピンク
-        "rgba(255, 218, 185, 0.8)", // ピーチ
-        "rgba(255, 250, 205, 0.8)", // レモン
-        "rgba(224, 255, 255, 0.8)", // シアン
-        "rgba(230, 230, 250, 0.8)"  // ラベンダー
+        "rgba(255, 182, 193, 0.8)", 
+        "rgba(255, 218, 185, 0.8)", 
+        "rgba(255, 250, 205, 0.8)", 
+        "rgba(224, 255, 255, 0.8)", 
+        "rgba(230, 230, 250, 0.8)"
       ];
 
-      // ★ 高速化：色ごとの「光の粒」を裏側で事前生成しておく
-      function createSparkCanvas(color) {
+      function createExplosionCache(color) {
         const c = document.createElement("canvas");
-        c.width = 30; c.height = 30;
-        const ctx = c.getContext("2d");
-        ctx.fillStyle = color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = color;
-        ctx.beginPath();
-        ctx.arc(15, 15, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+        c.width = 40; 
+        c.height = 40;
+        const cCtx = c.getContext("2d");
+        cCtx.fillStyle = color;
+        cCtx.shadowBlur = 10;
+        cCtx.shadowColor = color;
+        cCtx.beginPath();
+        cCtx.arc(20, 20, 2, 0, Math.PI * 2);
+        cCtx.fill();
         return c;
       }
 
-      const sparkCaches = {
-        gold: createSparkCanvas(goldColor),
-        petals: petalColors.map(color => createSparkCanvas(color))
-      };
-
+      petalColors.forEach(color => { explosionCaches[color] = createExplosionCache(color); });
+      explosionCaches[goldColor] = createExplosionCache(goldColor);
 
       /* =========================================
-       1. テーマ切り替え
+       1-A. BGMの音声制御ロジック
+       ========================================= */
+      const bgmAudio = new Audio('bgm.mp3');
+      bgmAudio.loop = true; 
+      bgmAudio.volume = 0.5; 
+
+      let isBgmPlaying = false;
+      const bgmBtn = document.getElementById("bgm-btn");
+
+      bgmBtn.addEventListener("click", () => {
+        if (isBgmPlaying) {
+          bgmAudio.pause();
+          isBgmPlaying = false;
+          bgmBtn.textContent = "BGM 再生";
+          bgmBtn.classList.remove("bgm-on");
+        } else {
+          bgmAudio.play().then(() => {
+            isBgmPlaying = true;
+            bgmBtn.textContent = "BGM 停止";
+            bgmBtn.classList.add("bgm-on");
+          }).catch(error => {
+            alert("BGMを再生できませんでした。\nHTMLファイルと同じ場所に「bgm.mp3」という名前の音楽ファイルが置かれているか確認してください。");
+            console.error(error);
+          });
+        }
+      });
+
+      /* =========================================
+       1-B. Web Audio API (チャイム音) の実装
+       ========================================= */
+      let audioCtx;
+
+      function playChime() {
+        // ブラウザの制約に対応するため、初回のみContextを生成
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        // 優しいサイン波を設定（周波数880Hz = A5の音）
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+
+        // 音量のエンベロープ（時間変化）を設定
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        // ふわっと音を立ち上げる
+        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.1);
+        // 余韻を残しながらゆっくり消える
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 3.5); // 3.5秒後に完全に停止
+      }
+
+      /* =========================================
+       1-C. localStorageによる今日の集中回数管理
+       ========================================= */
+      const countDisplay = document.getElementById("count-display");
+      let todayWorkCount = 0;
+
+      function loadCount() {
+        const today = new Date().toDateString(); // 例: "Wed May 24 2026"
+        const savedDate = localStorage.getItem("pomodoroDate");
+        
+        if (savedDate === today) {
+          // 日付が同じなら保存されている回数を読み込む
+          todayWorkCount = parseInt(localStorage.getItem("pomodoroCount") || "0", 10);
+        } else {
+          // 日付が変わっていれば0にリセットして日付を保存
+          todayWorkCount = 0;
+          localStorage.setItem("pomodoroDate", today);
+          localStorage.setItem("pomodoroCount", todayWorkCount.toString());
+        }
+        countDisplay.textContent = todayWorkCount;
+      }
+
+      function incrementCount() {
+        todayWorkCount++;
+        localStorage.setItem("pomodoroCount", todayWorkCount.toString());
+        countDisplay.textContent = todayWorkCount;
+      }
+
+      // 初期化時に回数を読み込む
+      loadCount();
+
+      /* =========================================
+       2. テーマ切り替えと初期化
        ========================================= */
       let isDarkMode = false;
-
       function applyTheme(forceMode) {
         if (forceMode !== undefined) {
           isDarkMode = forceMode;
@@ -166,7 +332,6 @@
           const hour = new Date().getHours();
           isDarkMode = hour >= 18 || hour < 6;
         }
-
         if (isDarkMode) {
           document.body.classList.add("dark-mode");
         } else {
@@ -174,16 +339,14 @@
         }
         initParticles();
       }
-
-      document.getElementById("theme-btn").addEventListener("click", () => {
-        applyTheme(!isDarkMode);
-      });
+      document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isDarkMode));
 
       /* =========================================
-       2. タイマーロジック
+       3. タイマーロジック
        ========================================= */
       let timeLeft = 25 * 60;
       let timerId = null;
+      let currentMode = "work"; 
       const timeDisplay = document.getElementById("time-display");
 
       function updateDisplay() {
@@ -197,25 +360,50 @@
           timeLeft--;
           updateDisplay();
         } else {
+          // --- タイマー完了時の処理 ---
           clearInterval(timerId);
           timerId = null;
+          
           createExplosion(window.innerWidth / 2, window.innerHeight / 2);
+          playChime(); // 追加: チャイム音を鳴らす
+
+          if (currentMode === "work") {
+            incrementCount(); // 追加: 集中モード完了なら回数を+1
+          }
+
+          if (currentMode === "rest") {
+            currentMode = "work";
+            timeLeft = 25 * 60;
+            updateDisplay();
+          }
         }
       }
+
+      document.getElementById("work-btn").addEventListener("click", () => {
+        clearInterval(timerId);
+        timerId = null;
+        currentMode = "work";
+        timeLeft = 25 * 60;
+        updateDisplay();
+      });
+
+      document.getElementById("rest-btn").addEventListener("click", () => {
+        clearInterval(timerId);
+        timerId = null;
+        currentMode = "rest";
+        timeLeft = 5 * 60;
+        updateDisplay();
+      });
 
       document.getElementById("start-btn").addEventListener("click", () => {
         if (timerId === null && timeLeft > 0) timerId = setInterval(tick, 1000);
       });
+
       document.getElementById("pause-btn").addEventListener("click", () => {
         clearInterval(timerId);
         timerId = null;
       });
-      document.getElementById("reset-btn").addEventListener("click", () => {
-        clearInterval(timerId);
-        timerId = null;
-        timeLeft = 25 * 60;
-        updateDisplay();
-      });
+
       document.getElementById("test-btn").addEventListener("click", () => {
         clearInterval(timerId);
         timeLeft = 3;
@@ -224,7 +412,7 @@
       });
 
       /* =========================================
-       3. Canvas描画ロジック
+       4. Canvas描画ロジック
        ========================================= */
       const canvas = document.getElementById("particle-canvas");
       const ctx = canvas.getContext("2d");
@@ -240,48 +428,34 @@
 
       class Particle {
         constructor(x, y, type) {
-          this.x = x;
-          this.y = y;
-          this.type = type;
+          this.x = x; this.y = y; this.type = type; 
 
           if (this.type === "explosion") {
             const angle = Math.random() * Math.PI * 2;
-            
-            // ★ ゆっくり上品に広がるように初速を抑える（6〜18の範囲）
             const velocity = Math.random() * 12 + 6;
             this.speedX = Math.cos(angle) * velocity;
             this.speedY = Math.sin(angle) * velocity;
-
-            this.size = Math.random() * 1.5 + 0.5;
+            this.size = Math.random() * 1.5 + 0.5; 
             this.opacity = 1;
             this.fadeSpeed = Math.random() * 0.004 + 0.003;
-
-            // ★ テーマに合わせた色（事前作成した画像）のセット
+            
             if (isDarkMode) {
-              this.sparkCanvas = sparkCaches.gold;
-              this.fireworkColor = goldColor;
+              this.fireworkColor = goldColor; 
             } else {
-              // ライトモードはランダムにカラフルな色を選ぶ
-              const randIdx = Math.floor(Math.random() * petalColors.length);
-              this.sparkCanvas = sparkCaches.petals[randIdx];
-              this.fireworkColor = petalColors[randIdx];
+              this.fireworkColor = petalColors[Math.floor(Math.random() * petalColors.length)];
             }
-
           } else if (this.type === "shootingStar") {
             this.speedX = Math.random() * 2 + 3;
             this.speedY = Math.random() * 2 + 3;
             this.size = Math.random() * 1.5 + 0.5;
             this.opacity = 1;
             this.fadeSpeed = 0.005;
-
           } else if (this.type === "star") {
-            this.speedX = 0;
-            this.speedY = 0;
+            this.speedX = 0; this.speedY = 0;
             this.size = Math.random() * 1.5 + 0.2;
             this.angle = Math.random() * Math.PI * 2;
             this.twinkleSpeed = Math.random() * 0.02 + 0.005;
             this.opacity = 0;
-
           } else {
             this.baseX = x;
             this.speedY = Math.random() * 0.3 + 0.15;
@@ -296,15 +470,12 @@
 
         update() {
           if (this.type === "explosion") {
-            // ★ 摩擦と重力：ゆっくり優雅にフワッと落ちるバランス
             this.speedX *= 0.98;
             this.speedY *= 0.98;
             this.speedY += 0.02;
-
             this.x += this.speedX;
             this.y += this.speedY;
             this.opacity -= this.fadeSpeed;
-
           } else if (this.type === "petal") {
             this.angle += this.swaySpeed;
             this.x = this.baseX + Math.sin(this.angle) * 30;
@@ -313,11 +484,9 @@
               this.y = -20;
               this.baseX = Math.random() * canvas.width;
             }
-
           } else if (this.type === "star") {
             this.angle += this.twinkleSpeed;
             this.opacity = Math.abs(Math.sin(this.angle));
-
           } else {
             this.x += this.speedX;
             this.y += this.speedY;
@@ -332,9 +501,7 @@
           if (this.type === "shootingStar") {
             const tailLength = 60;
             const grad = ctx.createLinearGradient(
-              this.x, this.y,
-              this.x - this.speedX * tailLength,
-              this.y - this.speedY * tailLength
+              this.x, this.y, this.x - this.speedX * tailLength, this.y - this.speedY * tailLength,
             );
             grad.addColorStop(0, "rgba(255, 255, 255, 1)");
             grad.addColorStop(1, "rgba(255, 255, 255, 0)");
@@ -344,25 +511,25 @@
             ctx.moveTo(this.x, this.y);
             ctx.lineTo(this.x - this.speedX * tailLength, this.y - this.speedY * tailLength);
             ctx.stroke();
-
           } else if (this.type === "star") {
             ctx.fillStyle = "#ffffff";
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
-
           } else if (this.type === "explosion") {
-            // 事前生成した画像を貼り付けて高速描画（色も自動で切り替わる）
-            ctx.drawImage(this.sparkCanvas, this.x - 15, this.y - 15);
+            const cache = explosionCaches[this.fireworkColor];
+            const scale = this.size / 2;
+            const drawSize = 40 * scale; 
+            const offset = 20 * scale;   
+            
+            ctx.drawImage(cache, this.x - offset, this.y - offset, drawSize, drawSize);
 
-            // 花火の繊細な光の尾
             ctx.strokeStyle = this.fireworkColor;
             ctx.lineWidth = this.size * 0.5;
             ctx.beginPath();
             ctx.moveTo(this.x, this.y);
-            ctx.lineTo(this.x - this.speedX * 2.5, this.y - this.speedY * 2.5);
+            ctx.lineTo(this.x - this.speedX * 3, this.y - this.speedY * 3);
             ctx.stroke();
-
           } else {
             ctx.translate(this.x, this.y);
             ctx.rotate(this.angle * 2);
@@ -371,7 +538,6 @@
             ctx.ellipse(0, 0, this.size, this.size * 2, 0, 0, Math.PI * 2);
             ctx.fill();
           }
-
           ctx.restore();
         }
       }
@@ -379,25 +545,27 @@
       function initParticles() {
         particlesArray.length = 0;
         if (isDarkMode) {
-          for (let i = 0; i < 120; i++) particlesArray.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, "star"));
+          for (let i = 0; i < 150; i++) particlesArray.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, "star"));
         } else {
           for (let i = 0; i < 40; i++) particlesArray.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height, "petal"));
         }
       }
 
       function createExplosion(x, y) {
-        // 動作が軽いので400個の美しい光を放つ
         for (let i = 0; i < 400; i++) particlesArray.push(new Particle(x, y, "explosion"));
       }
 
-      function animate() {
-        if (isDarkMode) {
-          ctx.fillStyle = "rgba(11, 12, 20, 0.2)"; 
-        } else {
-          ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
-        }
+  function animate() {
+        // 1. 半透明の消しゴムでキャンバスを削る（美しい残像を作る）
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; // この0.2が残像の長さ
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 2. 筆のモードを「通常（上塗り）」に必ず戻す！
+        // ★ここが抜けているとパーティクルが消しゴムになって見えなくなります★
+        ctx.globalCompositeOperation = 'source-over';
 
+        // タイマー作動中の流れ星
         if (timerId !== null) {
           if (isDarkMode && Math.random() < 0.003) {
             const x = Math.random() * (canvas.width * 0.8);
@@ -406,6 +574,7 @@
           }
         }
 
+        // パーティクルの更新と描画
         for (let i = 0; i < particlesArray.length; i++) {
           particlesArray[i].update();
           particlesArray[i].draw();
